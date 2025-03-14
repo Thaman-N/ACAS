@@ -11,7 +11,11 @@ Advanced Contract Analysis System: A comprehensive legal contract analysis syste
 
 ## Setup and Installation
 
-Model used:
+Models used:
+```bash
+Mistral-7B-Instruct-v0.3.Q5_K_M.gguf
+Meta-Llama-3-8B-Instruct.Q5_K_M.gguf
+```
 
 
 Create a dedicated virtual environment for the project:
@@ -22,13 +26,13 @@ conda create -n legal-ai python=3.9
 conda activate legal-ai
 
 # Install core dependencies
-pip install transformers==4.35.0
-pip install torch==2.0.1 torchvision==0.15.2 torchaudio==2.0.2 --index-url https://download.pytorch.org/whl/cu117
-pip install bitsandbytes==0.41.1
-pip install peft==0.5.0
-pip install sentence-transformers==2.2.2
-pip install llama-cpp-python==0.2.11
-pip install faiss-gpu==1.7.2
+pip install transformers
+pip install torchtorchvision torchaudio
+pip install bitsandbytes
+pip install peft
+pip install sentence-transformers
+pip install llama-cpp-python
+pip install faiss-gpu
 pip install pandas numpy matplotlib seaborn tqdm
 pip install fastapi uvicorn python-multipart
 pip install spacy nltk datasets rouge_score
@@ -85,7 +89,7 @@ Access the frontend interface:
 
 ```bash
 python -m http.server 8080
-# Then access the UI at http://localhost:8080/multimodal-agent-frontend.html
+# Go to http://localhost:8080/multimodal-agent-frontend.html
 ```
 
 ### Fine-Tuning with QLoRA
