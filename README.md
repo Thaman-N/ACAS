@@ -17,6 +17,8 @@ Mistral-7B-Instruct-v0.3.Q5_K_M.gguf
 Meta-Llama-3-8B-Instruct.Q5_K_M.gguf
 ```
 
+Dataset used:
+https://www.atticusprojectai.org/cuad
 
 Create a dedicated virtual environment for the project:
 
@@ -60,10 +62,10 @@ sudo apt-get install poppler-utils
 
 The project is implemented in several phases:
 
-1.NLP analysis, prompt engineering techniques, and RAG implementation for legal contracts
-2.Multimodal agents capable of processing text, voice, images, and PDFs
-3.Fine-tuning language models with QLoRA for legal domain adaptation
-4.Comprehensive evaluation framework for model assessment
+- NLP analysis, prompt engineering techniques, and RAG implementation for legal contracts
+- Multimodal agents capable of processing text, voice, images, and PDFs
+- Fine-tuning language models with QLoRA for legal domain adaptation
+- Comprehensive evaluation framework for model assessment
 
 ## Running the System
 
