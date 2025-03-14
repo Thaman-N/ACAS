@@ -1,0 +1,881 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Legal Contract Analyzer</title>
+    <!-- Tailwind CSS via CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Alpine.js for animations and interactions -->
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+    <!-- Animate.css for additional animations -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css" />
+    <!-- Font Awesome for icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+    <style>
+        [x-cloak] { display: none !important; }
+        
+        @keyframes fadeIn {
+            0% { opacity: 0; }
+            100% { opacity: 1; }
+        }
+        
+        @keyframes slideInUp {
+            0% { transform: translateY(20px); opacity: 0; }
+            100% { transform: translateY(0); opacity: 1; }
+        }
+        
+        .fade-in {
+            animation: fadeIn 0.5s ease-in-out forwards;
+        }
+        
+        .slide-in-up {
+            animation: slideInUp 0.5s ease-out forwards;
+        }
+        
+        .tab-transition {
+            transition: all 0.3s ease;
+        }
+    </style>
+</head>
+<body class="bg-gray-50 min-h-screen" x-data="{ activeTab: 'text-tab', isLoading: false, systemStatus: '', isError: false, showDeepAnalysis: false }">
+    <div class="container max-w-6xl mx-auto px-4 py-8 relative">
+        <header class="text-center mb-10 animate__animated animate__fadeIn">
+            <h1 class="text-4xl font-bold text-indigo-700 mb-3">Legal Contract Analyzer</h1>
+            <p class="text-gray-600 max-w-2xl mx-auto">Analyze legal documents with advanced AI techniques using text, voice, image, or PDF input methods.</p>
+        </header>
+        
+        <main class="bg-white rounded-xl shadow-lg p-6 animate__animated animate__fadeIn animate__delay-1s">
+            <!-- Tab Navigation -->
+            <div class="flex flex-wrap mb-6 gap-2 border-b border-gray-200">
+                <button @click="activeTab = 'text-tab'" 
+                        :class="{'bg-indigo-600 text-white': activeTab === 'text-tab', 'bg-gray-100 text-gray-700 hover:bg-gray-200': activeTab !== 'text-tab'}"
+                        class="py-2 px-4 rounded-t-lg font-medium transition-all duration-200 flex items-center">
+                    <i class="fas fa-file-alt mr-2"></i> Text Input
+                </button>
+                <button @click="activeTab = 'voice-tab'" 
+                        :class="{'bg-indigo-600 text-white': activeTab === 'voice-tab', 'bg-gray-100 text-gray-700 hover:bg-gray-200': activeTab !== 'voice-tab'}"
+                        class="py-2 px-4 rounded-t-lg font-medium transition-all duration-200 flex items-center">
+                    <i class="fas fa-microphone mr-2"></i> Voice Input
+                </button>
+                <button @click="activeTab = 'image-tab'" 
+                        :class="{'bg-indigo-600 text-white': activeTab === 'image-tab', 'bg-gray-100 text-gray-700 hover:bg-gray-200': activeTab !== 'image-tab'}"
+                        class="py-2 px-4 rounded-t-lg font-medium transition-all duration-200 flex items-center">
+                    <i class="fas fa-image mr-2"></i> Image Input
+                </button>
+                <button @click="activeTab = 'pdf-tab'" 
+                        :class="{'bg-indigo-600 text-white': activeTab === 'pdf-tab', 'bg-gray-100 text-gray-700 hover:bg-gray-200': activeTab !== 'pdf-tab'}"
+                        class="py-2 px-4 rounded-t-lg font-medium transition-all duration-200 flex items-center">
+                    <i class="fas fa-file-pdf mr-2"></i> PDF Input
+                </button>
+                <button @click="activeTab = 'rag-tab'" 
+                        :class="{'bg-indigo-600 text-white': activeTab === 'rag-tab', 'bg-gray-100 text-gray-700 hover:bg-gray-200': activeTab !== 'rag-tab'}"
+                        class="py-2 px-4 rounded-t-lg font-medium transition-all duration-200 flex items-center">
+                    <i class="fas fa-database mr-2"></i> Knowledge Base Search
+                </button>
+            </div>
+            
+            <!-- Tab Content -->
+            <div class="relative min-h-80">
+                <!-- Knowledge Base Search Tab -->
+                <div id="rag-tab" x-cloak x-show="activeTab === 'rag-tab'" class="slide-in-up space-y-4">
+                    <div class="bg-indigo-50 border-l-4 border-indigo-500 p-4 rounded-md mb-4">
+                        <p class="text-indigo-700 font-medium">Search our legal contract knowledge base with natural language questions.</p>
+                    </div>
+                    
+                    <div class="relative">
+                        <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                            <i class="fas fa-search text-gray-400"></i>
+                        </div>
+                        <input type="text" id="rag-query" 
+                               class="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all duration-200"
+                               placeholder="Enter your legal question...">
+                    </div>
+                    
+                    <div class="flex gap-2">
+                        <button onclick="searchKnowledgeBase()" 
+                                class="bg-indigo-600 hover:bg-indigo-700 text-white font-medium py-2 px-6 rounded-lg transition-all duration-200 flex items-center">
+                            <i class="fas fa-search mr-2"></i> Search
+                        </button>
+                    </div>
+                    
+                    <div x-show="isLoading" class="flex justify-center my-4">
+                        <div class="animate-spin rounded-full h-10 w-10 border-t-2 border-b-2 border-indigo-500"></div>
+                    </div>
+                    
+                    <div id="rag-result" class="bg-gray-50 rounded-lg p-4 mt-4 max-h-96 overflow-y-auto shadow-inner hidden"></div>
+                    <div id="rag-sources" class="mt-4 text-sm border-t pt-4 hidden"></div>
+                </div>
+
+                <!-- Text Input Tab -->
+                <div id="text-tab" x-show="activeTab === 'text-tab'" class="slide-in-up space-y-4">
+                    <div class="bg-blue-50 border-l-4 border-blue-500 p-4 rounded-md mb-4">
+                        <p class="text-blue-800">This tab analyzes only the text you provide. For searching across the knowledge base, use the "Knowledge Base Search" tab.</p>
+                    </div>
+                    
+                    <div class="space-y-2">
+                        <label for="contract-text" class="block text-gray-700 font-medium">Paste Contract Text:</label>
+                        <textarea id="contract-text" 
+                                  class="w-full h-48 p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200"
+                                  placeholder="Paste your contract text here..."></textarea>
+                    </div>
+                    
+                    <div class="space-y-2">
+                        <label for="text-query" class="block text-gray-700 font-medium">Query (Optional):</label>
+                        <input type="text" id="text-query" 
+                               class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200"
+                               placeholder="Ask a specific question about the contract...">
+                    </div>
+                    
+                    <div class="flex gap-3">
+                        <button onclick="analyzeText()" 
+                                class="bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-6 rounded-lg transition-all duration-200 flex items-center">
+                            <i class="fas fa-search-plus mr-2"></i> Analyze
+                        </button>
+                        
+                        <button id="deep-analysis-btn" onclick="performDeepAnalysis()" 
+                            class="bg-black hover:bg-gray-800 text-white font-medium py-2 px-6 rounded-lg transition-all duration-200 flex items-center">
+                            <i class="fas fa-brain mr-2"></i> Deep Analysis
+                        </button>
+                    </div>
+                    
+                    <div x-show="isLoading" class="flex justify-center my-4">
+                        <div class="animate-spin rounded-full h-10 w-10 border-t-2 border-b-2 border-blue-500"></div>
+                    </div>
+                    
+                    <div id="text-result" class="bg-gray-50 rounded-lg p-4 mt-4 max-h-96 overflow-y-auto shadow-inner hidden"></div>
+                </div>
+                
+                <!-- Voice Input Tab -->
+                <div id="voice-tab" x-cloak x-show="activeTab === 'voice-tab'" class="slide-in-up space-y-4">
+                    <div class="bg-green-50 border-l-4 border-green-500 p-4 rounded-md">
+                        <p class="text-green-800">Use your microphone to ask a question about a contract. Click "Start Recording" to begin.</p>
+                    </div>
+                    
+                    <div class="flex justify-center py-8">
+                        <div class="text-center">
+                            <div id="microphone-animation" class="mb-4 flex justify-center">
+                                <i class="fas fa-microphone text-5xl text-gray-300 transform transition-transform duration-200 hover:scale-110"></i>
+                            </div>
+                            <p id="recording-status" class="text-gray-600 mb-4">Ready to record</p>
+                            <div class="flex gap-3 justify-center">
+                                <button id="start-recording" onclick="startRecording()" 
+                                        class="bg-green-600 hover:bg-green-700 text-white font-medium py-2 px-6 rounded-lg transition-all duration-200 flex items-center">
+                                    <i class="fas fa-microphone mr-2"></i> Start Recording
+                                </button>
+                                <button id="stop-recording" onclick="stopRecording()" disabled
+                                        class="bg-red-600 hover:bg-red-700 text-white font-medium py-2 px-6 rounded-lg transition-all duration-200 flex items-center opacity-50">
+                                    <i class="fas fa-stop-circle mr-2"></i> Stop Recording
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div x-show="isLoading" class="flex justify-center my-4">
+                        <div class="animate-spin rounded-full h-10 w-10 border-t-2 border-b-2 border-green-500"></div>
+                    </div>
+                    
+                    <div id="voice-result" class="bg-gray-50 rounded-lg p-4 mt-4 max-h-96 overflow-y-auto shadow-inner hidden"></div>
+                </div>
+                
+                <!-- Image Input Tab -->
+                <div id="image-tab" x-cloak x-show="activeTab === 'image-tab'" class="slide-in-up space-y-4">
+                    <div class="bg-amber-50 border-l-4 border-amber-500 p-4 rounded-md">
+                        <p class="text-amber-800">Upload an image or scan of a contract document for analysis.</p>
+                    </div>
+                    
+                    <div class="space-y-4">
+                        <div class="border-2 border-dashed border-gray-300 rounded-lg px-6 py-10 text-center hover:border-amber-500 transition-colors duration-200">
+                            <input type="file" id="image-upload" accept="image/*" class="hidden">
+                            <label for="image-upload" class="cursor-pointer">
+                                <i class="fas fa-cloud-upload-alt text-4xl text-gray-400 mb-4 block"></i>
+                                <span class="text-gray-700">Click to upload contract image/scan</span>
+                                <span class="block text-gray-500 text-sm mt-1">Supported formats: JPG, PNG, GIF, BMP</span>
+                            </label>
+                            <div id="image-preview" class="mt-4 hidden">
+                                <p class="text-amber-600 font-medium">Image selected</p>
+                            </div>
+                        </div>
+                        
+                        <div class="space-y-2">
+                            <label for="image-query" class="block text-gray-700 font-medium">Query (Optional):</label>
+                            <input type="text" id="image-query" 
+                                   class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-amber-500 transition-all duration-200"
+                                   placeholder="Ask a specific question about the contract...">
+                        </div>
+                        
+                        <button onclick="analyzeImage()" 
+                                class="bg-amber-600 hover:bg-amber-700 text-white font-medium py-2 px-6 rounded-lg transition-all duration-200 flex items-center">
+                            <i class="fas fa-file-image mr-2"></i> Extract & Analyze
+                        </button>
+                    </div>
+                    
+                    <div x-show="isLoading" class="flex justify-center my-4">
+                        <div class="animate-spin rounded-full h-10 w-10 border-t-2 border-b-2 border-amber-500"></div>
+                    </div>
+                    
+                    <div id="image-result" class="bg-gray-50 rounded-lg p-4 mt-4 max-h-96 overflow-y-auto shadow-inner hidden"></div>
+                </div>
+                
+                <!-- PDF Input Tab -->
+                <div id="pdf-tab" x-cloak x-show="activeTab === 'pdf-tab'" class="slide-in-up space-y-4">
+                    <div class="bg-red-50 border-l-4 border-red-500 p-4 rounded-md">
+                        <p class="text-red-800">Upload a PDF contract document for extraction and analysis.</p>
+                    </div>
+                    
+                    <div class="space-y-4">
+                        <div class="border-2 border-dashed border-gray-300 rounded-lg px-6 py-10 text-center hover:border-red-500 transition-colors duration-200">
+                            <input type="file" id="pdf-upload" accept="application/pdf" class="hidden">
+                            <label for="pdf-upload" class="cursor-pointer">
+                                <i class="fas fa-file-pdf text-4xl text-gray-400 mb-4 block"></i>
+                                <span class="text-gray-700">Click to upload contract PDF</span>
+                                <span class="block text-gray-500 text-sm mt-1">Only PDF files are supported</span>
+                            </label>
+                            <div id="pdf-preview" class="mt-4 hidden">
+                                <p class="text-red-600 font-medium">PDF selected</p>
+                            </div>
+                        </div>
+                        
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div class="space-y-2">
+                                <label for="pdf-query" class="block text-gray-700 font-medium">Query (Optional):</label>
+                                <input type="text" id="pdf-query" 
+                                       class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500 transition-all duration-200"
+                                       placeholder="Ask a specific question about the contract...">
+                            </div>
+                            
+                            <div class="space-y-2">
+                                <label for="page-ranges" class="block text-gray-700 font-medium">Page Ranges (Optional):</label>
+                                <input type="text" id="page-ranges" 
+                                       class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500 transition-all duration-200"
+                                       placeholder="e.g. 1-3,5,7-10">
+                            </div>
+                        </div>
+                        
+                        <button onclick="analyzePDF()" 
+                                class="bg-red-600 hover:bg-red-700 text-white font-medium py-2 px-6 rounded-lg transition-all duration-200 flex items-center">
+                            <i class="fas fa-file-pdf mr-2"></i> Extract & Analyze
+                        </button>
+                    </div>
+                    
+                    <div x-show="isLoading" class="flex justify-center my-4">
+                        <div class="animate-spin rounded-full h-10 w-10 border-t-2 border-b-2 border-red-500"></div>
+                    </div>
+                    
+                    <div id="pdf-result" class="bg-gray-50 rounded-lg p-4 mt-4 max-h-96 overflow-y-auto shadow-inner hidden"></div>
+                </div>
+            </div>
+        </main>
+        
+        <!-- System Status Toast -->
+        <div x-show="systemStatus" 
+             x-transition:enter="transition ease-out duration-300"
+             x-transition:enter-start="opacity-0 transform translate-y-2"
+             x-transition:enter-end="opacity-100 transform translate-y-0"
+             x-transition:leave="transition ease-in duration-300"
+             x-transition:leave-start="opacity-100 transform translate-y-0"
+             x-transition:leave-end="opacity-0 transform translate-y-2"
+             :class="{'bg-red-100 text-red-800 border-red-300': isError, 'bg-indigo-100 text-indigo-800 border-indigo-300': !isError}"
+             class="fixed bottom-4 right-4 px-4 py-3 rounded-lg shadow-lg border animate__animated animate__fadeIn flex items-center">
+            <i :class="isError ? 'fa-exclamation-circle text-red-500' : 'fa-info-circle text-indigo-500'" class="fas mr-2"></i>
+            <span x-text="systemStatus"></span>
+            <button @click="systemStatus = ''" class="ml-3 text-gray-500 hover:text-gray-700">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+    </div>
+
+    <footer class="bg-gray-800 text-white py-6 mt-12">
+        <div class="container mx-auto px-4 text-center">
+            <p class="mb-2">Legal Contract Analyzer - AI-Powered Document Analysis</p>
+            <p class="text-gray-400 text-sm">© 2025 GenAI Project - UE22CS342BA9</p>
+        </div>
+    </footer>
+
+    <script>
+        // API endpoint (update with your actual endpoint)
+        const API_URL = 'http://localhost:8000';
+        
+        // Tab switching is handled by Alpine.js
+        
+        // Update UI elements for file previews
+        document.getElementById('image-upload').addEventListener('change', function(e) {
+            if (this.files.length > 0) {
+                document.getElementById('image-preview').classList.remove('hidden');
+            } else {
+                document.getElementById('image-preview').classList.add('hidden');
+            }
+        });
+        
+        document.getElementById('pdf-upload').addEventListener('change', function(e) {
+            if (this.files.length > 0) {
+                document.getElementById('pdf-preview').classList.remove('hidden');
+            } else {
+                document.getElementById('pdf-preview').classList.add('hidden');
+            }
+        });
+        
+        // Text analysis function
+        async function analyzeText() {
+            const text = document.getElementById('contract-text').value;
+            const query = document.getElementById('text-query').value;
+            const resultDiv = document.getElementById('text-result');
+            
+            if (!text) {
+                showSystemStatus('Please enter contract text.', true);
+                return;
+            }
+            
+            // Show loader with Alpine
+            Alpine.store('isLoading', true);
+            Alpine.store('activeTab', 'text-tab');
+            document.querySelector('[x-data]').__x.$data.isLoading = true;
+            
+            resultDiv.textContent = 'Analyzing...';
+            resultDiv.classList.remove('hidden');
+            
+            try {
+                const response = await fetch(`${API_URL}/analyze/text`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        text: text,
+                        query: query || null
+                    })
+                });
+                
+                const data = await response.json();
+                
+                if (data.result) {
+                    resultDiv.innerHTML = `<div class="mb-4 pb-2 border-b border-gray-200">
+                        <h3 class="text-lg font-bold text-gray-800">Analysis Result</h3>
+                    </div>
+                    <div class="prose prose-indigo max-w-none">${formatResult(data.result)}</div>`;
+                } else if (data.error) {
+                    resultDiv.innerHTML = `<div class="text-red-600 font-medium"><i class="fas fa-exclamation-circle mr-2"></i>Error: ${data.error}</div>`;
+                    
+                    // Check for memory errors
+                    if (data.error.includes('out of memory') || data.error.includes('exceed context window')) {
+                        showSystemStatus('System is running low on memory. Try with a shorter text or query.', true);
+                    }
+                } else {
+                    resultDiv.innerHTML = `<div class="text-red-600 font-medium"><i class="fas fa-exclamation-circle mr-2"></i>Unexpected response format</div>`;
+                }
+            } catch (error) {
+                resultDiv.innerHTML = `<div class="text-red-600 font-medium"><i class="fas fa-exclamation-circle mr-2"></i>Error: ${error.message}</div>`;
+            } finally {
+                // Hide loader
+                document.querySelector('[x-data]').__x.$data.isLoading = false;
+            }
+        }
+        
+        async function searchKnowledgeBase() {
+            const query = document.getElementById('rag-query').value;
+            const resultDiv = document.getElementById('rag-result');
+            const sourcesDiv = document.getElementById('rag-sources');
+            
+            if (!query) {
+                showSystemStatus('Please enter a query.', true);
+                return;
+            }
+            
+            // Show loader with Alpine
+            document.querySelector('[x-data]').__x.$data.isLoading = true;
+            document.querySelector('[x-data]').__x.$data.activeTab = 'rag-tab';
+            
+            resultDiv.textContent = 'Searching...';
+            resultDiv.classList.remove('hidden');
+            sourcesDiv.textContent = '';
+            sourcesDiv.classList.add('hidden');
+            
+            try {
+                const formData = new FormData();
+                formData.append('query', query);
+                
+                const response = await fetch(`${API_URL}/search/knowledge_base`, {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                const data = await response.json();
+                
+                if (data.result) {
+                    resultDiv.innerHTML = `<div class="mb-4 pb-2 border-b border-gray-200">
+                        <h3 class="text-lg font-bold text-gray-800">Analysis</h3>
+                    </div>
+                    <div class="prose prose-indigo max-w-none">${formatResult(data.result)}</div>`;
+                    
+                    // Display sources if available
+                    if (data.retrieved_docs && data.retrieved_docs.length > 0) {
+                        let sourcesHtml = `<div class="mb-4 pb-2 border-b border-gray-200">
+                            <h3 class="text-lg font-bold text-gray-800">Sources</h3>
+                        </div>`;
+                        
+                        data.retrieved_docs.forEach((doc, index) => {
+                            sourcesHtml += `<div class="mb-4 p-3 border border-gray-200 rounded-md hover:bg-gray-50 transition-colors duration-200">
+                                <div class="flex items-start">
+                                    <div class="bg-indigo-100 text-indigo-700 rounded-full w-6 h-6 flex items-center justify-center mr-3 flex-shrink-0">
+                                        ${index + 1}
+                                    </div>
+                                    <div>
+                                        <h4 class="font-medium text-gray-800">${doc.source}</h4>
+                                        <p class="text-gray-500 text-sm">${doc.section}</p>
+                                        <p class="mt-2 text-gray-700">${doc.snippet}</p>
+                                    </div>
+                                </div>
+                            </div>`;
+                        });
+                        
+                        sourcesDiv.innerHTML = sourcesHtml;
+                        sourcesDiv.classList.remove('hidden');
+                    }
+                } else if (data.error) {
+                    resultDiv.innerHTML = `<div class="text-red-600 font-medium"><i class="fas fa-exclamation-circle mr-2"></i>Error: ${data.error}</div>`;
+                } else {
+                    resultDiv.innerHTML = `<div class="text-red-600 font-medium"><i class="fas fa-exclamation-circle mr-2"></i>Unexpected response format</div>`;
+                }
+            } catch (error) {
+                resultDiv.innerHTML = `<div class="text-red-600 font-medium"><i class="fas fa-exclamation-circle mr-2"></i>Error: ${error.message}</div>`;
+            } finally {
+                // Hide loader
+                document.querySelector('[x-data]').__x.$data.isLoading = false;
+            }
+        }
+
+        // Voice recording variables
+        let mediaRecorder;
+        let audioChunks = [];
+        
+        // Start recording function
+        async function startRecording() {
+            const startButton = document.getElementById('start-recording');
+            const stopButton = document.getElementById('stop-recording');
+            const statusElement = document.getElementById('recording-status');
+            const micIcon = document.querySelector('#microphone-animation i');
+            
+            try {
+                const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                
+                mediaRecorder = new MediaRecorder(stream);
+                audioChunks = [];
+                
+                mediaRecorder.addEventListener('dataavailable', event => {
+                    audioChunks.push(event.data);
+                });
+                
+                mediaRecorder.start();
+                
+                startButton.disabled = true;
+                stopButton.disabled = false;
+                stopButton.classList.remove('opacity-50');
+                statusElement.innerHTML = '<span class="text-red-600 font-medium animate-pulse">Recording...</span>';
+                
+                // Add pulsing animation to microphone icon
+                micIcon.classList.remove('text-gray-300');
+                micIcon.classList.add('text-red-500', 'animate-pulse');
+                
+                // Sound level visualization (simplified)
+                let pulseInterval = setInterval(() => {
+                    const scale = 1 + Math.random() * 0.5; // Random scale between 1 and 1.5
+                    micIcon.style.transform = `scale(${scale})`;
+                }, 200);
+                
+                // Store the interval to clear it later
+                micIcon.dataset.pulseInterval = pulseInterval;
+                
+            } catch (error) {
+                console.error('Error accessing microphone:', error);
+                statusElement.innerHTML = `<span class="text-red-600"><i class="fas fa-exclamation-circle mr-1"></i>Error: ${error.message}</span>`;
+                showSystemStatus('Could not access microphone. Please check permissions.', true);
+            }
+        }
+        
+        // Stop recording function
+        function stopRecording() {
+            const startButton = document.getElementById('start-recording');
+            const stopButton = document.getElementById('stop-recording');
+            const statusElement = document.getElementById('recording-status');
+            const resultDiv = document.getElementById('voice-result');
+            const micIcon = document.querySelector('#microphone-animation i');
+            
+            if (!mediaRecorder) {
+                return;
+            }
+            
+            // Clear the pulse animation
+            if (micIcon.dataset.pulseInterval) {
+                clearInterval(parseInt(micIcon.dataset.pulseInterval));
+                micIcon.style.transform = '';
+                micIcon.classList.remove('text-red-500', 'animate-pulse');
+                micIcon.classList.add('text-gray-300');
+            }
+            
+            mediaRecorder.addEventListener('stop', async () => {
+                // Show loader
+                document.querySelector('[x-data]').__x.$data.isLoading = true;
+                resultDiv.textContent = 'Processing audio...';
+                resultDiv.classList.remove('hidden');
+                
+                const audioBlob = new Blob(audioChunks, { type: 'audio/wav' });
+                const formData = new FormData();
+                formData.append('audio_file', audioBlob, 'recording.wav');
+                
+                try {
+                    const response = await fetch(`${API_URL}/analyze/voice`, {
+                        method: 'POST',
+                        body: formData
+                    });
+                    
+                    const data = await response.json();
+                    
+                    if (data.transcribed_text) {
+                        resultDiv.innerHTML = `
+                            <div class="mb-4 pb-2 border-b border-gray-200">
+                                <h3 class="text-lg font-bold text-gray-800">Transcribed Text</h3>
+                            </div>
+                            <div class="bg-green-50 p-3 rounded-md border border-green-200 mb-4">
+                                <p class="text-gray-800">${data.transcribed_text}</p>
+                            </div>
+                            ${data.analysis ? `
+                                <div class="mb-4 pb-2 border-b border-gray-200">
+                                    <h3 class="text-lg font-bold text-gray-800">Analysis</h3>
+                                </div>
+                                <div class="prose prose-indigo max-w-none">${formatResult(data.analysis)}</div>
+                            ` : ''}
+                        `;
+                    } else if (data.error) {
+                        resultDiv.innerHTML = `<div class="text-red-600 font-medium"><i class="fas fa-exclamation-circle mr-2"></i>Error: ${data.error}</div>`;
+                    } else {
+                        resultDiv.innerHTML = `<div class="text-red-600 font-medium"><i class="fas fa-exclamation-circle mr-2"></i>Unexpected response format</div>`;
+                    }
+                } catch (error) {
+                    resultDiv.innerHTML = `<div class="text-red-600 font-medium"><i class="fas fa-exclamation-circle mr-2"></i>Error: ${error.message}</div>`;
+                } finally {
+                    // Hide loader
+                    document.querySelector('[x-data]').__x.$data.isLoading = false;
+                }
+            });
+            
+            mediaRecorder.stop();
+            
+            startButton.disabled = false;
+            stopButton.disabled = true;
+            stopButton.classList.add('opacity-50');
+            statusElement.textContent = 'Recording stopped. Processing...';
+        }
+        
+        // Image analysis function
+        async function analyzeImage() {
+            const fileInput = document.getElementById('image-upload');
+            const query = document.getElementById('image-query').value;
+            const resultDiv = document.getElementById('image-result');
+            
+            if (!fileInput.files || fileInput.files.length === 0) {
+                showSystemStatus('Please select an image file.', true);
+                return;
+            }
+            
+            const file = fileInput.files[0];
+            
+            // Show loader
+            document.querySelector('[x-data]').__x.$data.isLoading = true;
+            document.querySelector('[x-data]').__x.$data.activeTab = 'image-tab';
+            
+            resultDiv.textContent = 'Processing image...';
+            resultDiv.classList.remove('hidden');
+            
+            const formData = new FormData();
+            formData.append('image_file', file);
+            if (query) {
+                formData.append('query', query);
+            }
+            
+            try {
+                const response = await fetch(`${API_URL}/analyze/image`, {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                const data = await response.json();
+                
+                if (data.extracted_text) {
+                    resultDiv.innerHTML = `
+                        <div class="mb-4 pb-2 border-b border-gray-200">
+                            <h3 class="text-lg font-bold text-gray-800">Extracted Text</h3>
+                        </div>
+                        <div class="bg-amber-50 p-3 rounded-md border border-amber-200 mb-4 max-h-40 overflow-y-auto">
+                            <p class="text-gray-800">${data.extracted_text.substring(0, 500)}${data.extracted_text.length > 500 ? '...' : ''}</p>
+                        </div>
+                        ${data.analysis ? `
+                            <div class="mb-4 pb-2 border-b border-gray-200">
+                                <h3 class="text-lg font-bold text-gray-800">Analysis</h3>
+                            </div>
+                            <div class="prose prose-amber max-w-none">${formatResult(data.analysis)}</div>
+                        ` : ''}
+                    `;
+                } else if (data.error) {
+                    resultDiv.innerHTML = `<div class="text-red-600 font-medium"><i class="fas fa-exclamation-circle mr-2"></i>Error: ${data.error}</div>`;
+                } else {
+                    resultDiv.innerHTML = `<div class="text-red-600 font-medium"><i class="fas fa-exclamation-circle mr-2"></i>Unexpected response format</div>`;
+                }
+            } catch (error) {
+                resultDiv.innerHTML = `<div class="text-red-600 font-medium"><i class="fas fa-exclamation-circle mr-2"></i>Error: ${error.message}</div>`;
+            } finally {
+                // Hide loader
+                document.querySelector('[x-data]').__x.$data.isLoading = false;
+            }
+        }
+        
+        // PDF analysis function
+        async function analyzePDF() {
+            const fileInput = document.getElementById('pdf-upload');
+            const query = document.getElementById('pdf-query').value;
+            const pageRanges = document.getElementById('page-ranges').value;
+            const resultDiv = document.getElementById('pdf-result');
+            
+            if (!fileInput.files || fileInput.files.length === 0) {
+                showSystemStatus('Please select a PDF file.', true);
+                return;
+            }
+            
+            const file = fileInput.files[0];
+            
+            // Show loader
+            document.querySelector('[x-data]').__x.$data.isLoading = true;
+            document.querySelector('[x-data]').__x.$data.activeTab = 'pdf-tab';
+            
+            resultDiv.textContent = 'Processing PDF...';
+            resultDiv.classList.remove('hidden');
+            
+            const formData = new FormData();
+            formData.append('pdf_file', file);
+            if (query) {
+                formData.append('query', query);
+            }
+            if (pageRanges) {
+                formData.append('page_ranges', pageRanges);
+            }
+            
+            try {
+                const response = await fetch(`${API_URL}/analyze/pdf`, {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                const data = await response.json();
+                
+                if (data.extracted_text) {
+                    resultDiv.innerHTML = `
+                        <div class="mb-4 pb-2 border-b border-gray-200">
+                            <h3 class="text-lg font-bold text-gray-800">Extracted Text (${data.total_pages} pages)</h3>
+                        </div>
+                        <div class="bg-red-50 p-3 rounded-md border border-red-200 mb-4 max-h-40 overflow-y-auto">
+                            <p class="text-gray-800">${data.extracted_text.substring(0, 500)}${data.extracted_text.length > 500 ? '...' : ''}</p>
+                        </div>
+                        ${data.analysis ? `
+                            <div class="mb-4 pb-2 border-b border-gray-200">
+                                <h3 class="text-lg font-bold text-gray-800">Analysis</h3>
+                            </div>
+                            <div class="prose prose-red max-w-none">${formatResult(data.analysis)}</div>
+                        ` : ''}
+                    `;
+                } else if (data.error) {
+                    resultDiv.innerHTML = `<div class="text-red-600 font-medium"><i class="fas fa-exclamation-circle mr-2"></i>Error: ${data.error}</div>`;
+                } else {
+                    resultDiv.innerHTML = `<div class="text-red-600 font-medium"><i class="fas fa-exclamation-circle mr-2"></i>Unexpected response format</div>`;
+                }
+            } catch (error) {
+                resultDiv.innerHTML = `<div class="text-red-600 font-medium"><i class="fas fa-exclamation-circle mr-2"></i>Error: ${error.message}</div>`;
+            } finally {
+                // Hide loader
+                document.querySelector('[x-data]').__x.$data.isLoading = false;
+            }
+        }
+        
+        // Helper function to format result
+        function formatResult(result) {
+            if (typeof result === 'string') {
+                // Convert plain text to HTML with proper formatting
+                return result.replace(/\n/g, '<br>')
+                             .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>') // Bold
+                             .replace(/\*(.*?)\*/g, '<em>$1</em>');  // Italic
+            } else if (typeof result === 'object') {
+                return `<pre class="bg-gray-800 text-gray-100 p-4 rounded-md overflow-x-auto">${JSON.stringify(result, null, 2)}</pre>`;
+            } else {
+                return String(result);
+            }
+        }
+
+        function showSystemStatus(message, isError = false) {
+            const alpineData = document.querySelector('[x-data]').__x.$data;
+            alpineData.systemStatus = message;
+            alpineData.isError = isError;
+            
+            // Hide after 5 seconds
+            setTimeout(() => {
+                if (alpineData.systemStatus === message) {
+                    alpineData.systemStatus = '';
+                }
+            }, 5000);
+        }
+
+        async function performDeepAnalysis() {
+            const text = document.getElementById('contract-text').value;
+            const resultDiv = document.getElementById('text-result');
+            
+            if (!text) {
+                showSystemStatus('Please enter contract text.', true);
+                return;
+            }
+            
+            // Show loader and status
+            document.querySelector('[x-data]').__x.$data.isLoading = true;
+            document.querySelector('[x-data]').__x.$data.activeTab = 'text-tab';
+            
+            resultDiv.innerHTML = `
+                <div class="animate-pulse mb-4">
+                    <div class="flex items-center">
+                        <i class="fas fa-brain text-purple-500 mr-2"></i>
+                        <h3 class="text-lg font-bold text-gray-800">Performing deep analysis...</h3>
+                    </div>
+                    <div class="mt-2 text-gray-600">
+                        <p>This may take a few minutes. The AI is breaking down your contract into sections for detailed analysis.</p>
+                    </div>
+                    <div class="mt-4 h-1 w-full bg-gray-200 rounded-full overflow-hidden">
+                        <div class="loading-bar h-full bg-purple-600 rounded-full" style="width: 10%"></div>
+                    </div>
+                </div>
+            `;
+            resultDiv.classList.remove('hidden');
+            
+            showSystemStatus('Deep analysis in progress...', false);
+            
+            try {
+                // Split text into sections (approx. 2000 chars each)
+                const sectionSize = 2000;
+                const sections = [];
+                
+                // Try to split at paragraph boundaries
+                const paragraphs = text.split('\n\n');
+                let currentSection = '';
+                
+                for (const para of paragraphs) {
+                    if (currentSection.length + para.length < sectionSize) {
+                        currentSection += para + '\n\n';
+                    } else {
+                        sections.push(currentSection.trim());
+                        currentSection = para + '\n\n';
+                    }
+                }
+                
+                if (currentSection) {
+                    sections.push(currentSection.trim());
+                }
+                
+                // Update status
+                resultDiv.querySelector('.loading-bar').style.width = '20%';
+                resultDiv.querySelector('p').textContent = `Analyzing ${sections.length} sections...`;
+                
+                // Process each section
+                const sectionAnalyses = [];
+                for (let i = 0; i < sections.length; i++) {
+                    // Update progress bar
+                    const progress = 20 + (i / sections.length * 60);
+                    resultDiv.querySelector('.loading-bar').style.width = `${progress}%`;
+                    resultDiv.querySelector('p').textContent = `Analyzing section ${i+1} of ${sections.length}...`;
+                    
+                    const response = await fetch(`${API_URL}/analyze/text`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({
+                            text: sections[i],
+                            query: `Analyze this section (Section ${i+1} of ${sections.length}) of the contract and identify key terms, definitions, or obligations.`
+                        })
+                    });
+                    
+                    const data = await response.json();
+                    if (data.result) {
+                        sectionAnalyses.push(data.result);
+                    }
+                    
+                    // Small delay to prevent overloading
+                    await new Promise(resolve => setTimeout(resolve, 1000));
+                }
+                
+                // Final stage: Synthesize the analyses
+                resultDiv.querySelector('.loading-bar').style.width = '90%';
+                resultDiv.querySelector('p').textContent = 'Synthesizing full analysis...';
+                
+                const synthesisResponse = await fetch(`${API_URL}/analyze/text`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        text: sectionAnalyses.join('\n\n'),
+                        query: 'Based on these section analyses, provide a comprehensive summary of the entire contract, its key terms, obligations, and potential issues.'
+                    })
+                });
+                
+                const synthesisData = await synthesisResponse.json();
+                
+                if (synthesisData.result) {
+                    resultDiv.innerHTML = `
+                        <div class="mb-4 pb-2 border-b border-gray-200">
+                            <div class="flex items-center">
+                                <i class="fas fa-brain text-purple-600 mr-2"></i>
+                                <h3 class="text-xl font-bold text-purple-800">Deep Analysis Result</h3>
+                            </div>
+                        </div>
+                        <div class="prose prose-purple max-w-none">${formatResult(synthesisData.result)}</div>
+                    `;
+                    showSystemStatus('Deep analysis complete!', false);
+                } else {
+                    resultDiv.innerHTML = `<div class="text-red-600 font-medium"><i class="fas fa-exclamation-circle mr-2"></i>Error synthesizing analysis.</div>`;
+                }
+            } catch (error) {
+                resultDiv.innerHTML = `<div class="text-red-600 font-medium"><i class="fas fa-exclamation-circle mr-2"></i>Error: ${error.message}</div>`;
+                showSystemStatus('Error in deep analysis', true);
+            } finally {
+                // Hide loader
+                document.querySelector('[x-data]').__x.$data.isLoading = false;
+            }
+        }
+        
+        // Add some loading indicators for file inputs
+        document.getElementById('image-upload').addEventListener('change', function() {
+            const preview = document.getElementById('image-preview');
+            if (this.files && this.files[0]) {
+                const fileName = this.files[0].name;
+                preview.innerHTML = `
+                    <div class="flex items-center">
+                        <i class="fas fa-check-circle text-green-500 mr-2"></i>
+                        <span class="font-medium">${fileName}</span>
+                    </div>
+                `;
+                preview.classList.remove('hidden');
+            }
+        });
+        
+        document.getElementById('pdf-upload').addEventListener('change', function() {
+            const preview = document.getElementById('pdf-preview');
+            if (this.files && this.files[0]) {
+                const fileName = this.files[0].name;
+                const fileSize = (this.files[0].size / 1024 / 1024).toFixed(2);
+                preview.innerHTML = `
+                    <div class="flex items-center">
+                        <i class="fas fa-check-circle text-green-500 mr-2"></i>
+                        <span class="font-medium">${fileName}</span>
+                        <span class="ml-2 text-gray-500 text-sm">(${fileSize} MB)</span>
+                    </div>
+                `;
+                preview.classList.remove('hidden');
+            }
+        });
+    </script>
+</body>
+</html>
