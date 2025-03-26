@@ -24,12 +24,12 @@ Create a dedicated virtual environment for the project:
 
 ```bash
 # Create and activate a conda environment (recommended)
-conda create -n legal-ai python=3.9
-conda activate legal-ai
+python3.9 -m venv genai
+source genai/bin/activate
 
 # Install core dependencies
 pip install transformers
-pip install torchtorchvision torchaudio
+pip install torch torchvision torchaudio
 pip install bitsandbytes
 pip install peft
 pip install sentence-transformers
